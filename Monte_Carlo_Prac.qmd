@@ -1,0 +1,624 @@
+---
+title: "Monte Carlo Practical"
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(knitr)
+library(rgl)
+```
+
+## Question 1: Accept-Reject Method
+
+1.  Plot the following function over the range $−5 < x < 5$:
+
+$$
+f(x) = e^{\frac{-x^2}{2}}[sin(2x)]^2
+$$
+
+```{r}
+given_func <- function(x)
+{
+  return(exp((-x^2/2))*(sin(2*x))^2)
+}
+
+x_vals <- seq(-5, 5, length.out = 1000)
+y_vals <- given_func(x_vals)
+norm_vals <- dnorm(x_vals, mean = 0, sd = 1)
+scaled_norm_vals <- dnorm(x_vals, mean = 0, sd = 1)*3
+
+data <- data.frame(x = x_vals, y = y_vals, norm = norm_vals, 
+                   candidate = scaled_norm_vals)
+
+ggplot(data = data) + 
+  geom_line(aes(x = x, y = y, color = "y")) +
+  scale_color_manual(
+    values = c("y" = "black"),
+    labels = c("y" = "Function Data")
+  ) +
+  labs(color = "Distribution")
+
+```
+
+2.  Find a normal distribution $(h(x))$ that qualifies as a candidate distribution (do this graphically by trial and error), i.e. find a constant $C$ such that $Ch(x)$ satisfies the requirements of a candidate distribution.
+
+```{r}
+
+ggplot(data = data) + 
+  geom_line(aes(x = x, y = y, color = "y")) + 
+  geom_line(aes(x = x, y = norm, color = "norm")) + 
+  geom_line(aes(x = x, y = candidate, color = "candidate")) +
+  scale_color_manual(
+    values = c("y" = "black", "norm" = "red", "candidate" = "blue"),
+    labels = c("y" = "Function Data", "norm" = "h(x)", "candidate" = "Ch(x)")
+  ) +
+  labs(color = "Distribution")
+
+```
+
+3.  Generate N values each from the candidate distribution, and from a $U(0,1)$ distribution.
+
+```{r}
+N <- 1000000
+candidate_values <- rnorm(N, 0, 1)
+uniform_values   <- runif(N, 0, 1)
+
+```
+
+4.  Calculate the ratio:
+
+$$
+g(x) = \frac{f(x)}{C \ h(x)}
+$$ 
+
+for each of the candidate values generated above. Substitute your constant for $C$. $x$ is the value generated from $h(x)$.
+
+```{r}
+# Guess for C Value
+C <- 3
+
+# Area under the curve
+u <- runif(100000, -4, 4)
+fmean <- mean(given_func(u))
+area <- fmean * 8
+nc <- 1/area                  # Provides a normalising constant for the function
+
+g_x_values <- given_func(candidate_values)/(C*dnorm(candidate_values))
+
+```
+
+5.  Accept $x$ with probability $g$.
+
+```{r}
+
+accepted_indicies <- uniform_values <= g_x_values
+accepted_values   <- candidate_values[accepted_indicies]
+
+```
+
+
+6.  Plot a histogram of the generated values, and plot the target distribution ($f(x)$) on top to check.
+
+```{r}
+#| fig-cap: We note that the function needs a normalising constant so it integrates to 1
+ggplot() +
+  geom_histogram(aes(x = accepted_values, y = after_stat(density)),
+    bins = 100,              # Number of bins
+    fill = "lightblue",      # Fill colour of bars
+    color = "black",         # Border colour of bars
+    alpha = 0.8,             # Transparency
+    boundary = 0,            # Start bins at zero
+    show.legend = FALSE      # Hide the legend
+  ) +
+  stat_function(
+    fun = \(x) given_func(x)*nc,  # Custom function for the distribution
+    color = "red"                 # Line thickness
+  ) +
+  labs(title = "Histogram of Generated Values", x = "Variable", y = "Frequency") +
+  theme_minimal()
+
+```
+
+7.  Comment on the proportion of values accepted. Is this acceptable?
+
+```{r}
+sum(accepted_indicies)/length(accepted_indicies)
+
+```
+Proportion accepted $\approx 42\%$, this is not preferable for high dimensional datasets.
+
+
+8.  The sample generated using the accept-reject method is a random sample generated from the:
+    a) **Target Distribution**
+    b) Candidate Distribution
+    c) None of the Above
+
+
+9.  Use simple MCMC (Metropolis algorithm) to sample from $f(x)$
+```{r}
+given_func <- function(x)
+{
+  return(exp((-x^2/2))*(sin(2*x))^2)
+}
+
+metropolis_algorithm <- function(initial, f_func, output_len)
+{
+  x <- numeric(output_len)
+  x[1] <- initial
+  i = 2
+  while (i <= output_len) 
+  {
+    # Generate a proposed point
+    proposal <- rnorm(1, mean = (x[i-1]), sd = 1)
+    
+    # Get the acceptance probability
+    acceptance_pr <- min(1, f_func(proposal)/f_func(x[i-1]))
+    
+    # Accept or Reject Candidate
+    if (runif(1) < acceptance_pr) 
+    {
+      x[i] <- proposal
+      i    <- i + 1
+    }
+    else
+    {
+      x[i] <- x[i-1]
+      i    <- i + 1
+    }
+  }
+  return(x)
+}
+
+obs_out <- 100000
+sample <- metropolis_algorithm(initial = 0, f_func = given_func, 
+                               output_len = obs_out)
+
+ggplot() +
+  geom_histogram(aes(x = sample, y = after_stat(density)),
+    bins = 100,              # Number of bins
+    fill = "lightblue",      # Fill colour of bars
+    color = "black",         # Border colour of bars
+    alpha = 0.8,             # Transparency
+    boundary = 0,            # Start bins at zero
+    show.legend = FALSE      # Hide the legend
+  ) +
+  stat_function(
+    fun = \(x) given_func(x)*nc,  # Custom function for the distribution
+    color = "red"                 # Line thickness
+  ) +
+  labs(title = "Histogram of Generated Values", x = "Variable", y = "Frequency") +
+  theme_minimal()
+
+
+```
+
+## Question 2: Probability Integral Transform
+
+1.  Generate values from an exponential distribution with$\lambda = 2$, using the probability integral transform.
+
+$$
+f(x) = \lambda e^{-\lambda x}
+$$
+
+$$
+\begin{aligned}
+f(x) &= \lambda e^{-\lambda x} \\
+F(x) &= P(X \le x) = \int_0^x \lambda e^{-\lambda x} dx = - e^{-\lambda x} |^x_0 = 1 - e^{-\lambda x} \\ 
+\implies x &= - \frac{\log(1 - u)}{\lambda}
+\end{aligned}
+$$
+```{r}
+inv_exp <- function(unif, lambda = 2)
+{
+  return(-(log(1-unif)/lambda))
+}
+
+N <- 100000
+unif_obs   <- runif(N, 0, 1)
+PIT_sample <- inv_exp(unif_obs)
+
+```
+
+2.  Make appropriate plots to check that this has worked.
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x = PIT_sample, y = after_stat(density)),
+    bins = 100,              # Number of bins
+    fill = "lightblue",      # Fill colour of bars
+    color = "black",         # Border colour of bars
+    alpha = 0.8,             # Transparency
+    boundary = 0            # Start bins at zero
+  ) +
+  stat_function(
+    fun = \(x) dexp(x, rate = 2),  # Custom function for the distribution
+    color = "red"                 # Line thickness
+  ) +
+  labs(title = "Histogram of Generated Values", x = "Variable", y = "Frequency") +
+  theme_minimal()
+
+
+```
+
+## Question 3: Importance Sampling
+
+1.  Estimate, using importance sampling:
+
+$$
+\int_0^1\frac{e^{-x}}{1+x^2}dx
+$$
+
+Compare your estimates and their standard errors using the following importance function:
+
+$$
+\begin{aligned}
+f_0(x) &= 1, \qquad \qquad & 0<x<1 \\ \\
+f_1(x) &= e^{-x}, \qquad \qquad & 0<x< \infty \\ \\
+f_3(x) &= \frac{e^{-x}}{1-e^{-1}}, \qquad \qquad & 0<x<1 
+\end{aligned}
+$$
+
+One can generate from $f_3(x)$ using inverse transform sampling, and from $f_1(x)$ using the `rexp()` random number generator. We then use all these as if they are the distribution and we are integrating over the function $f/f_i$.
+
+We define $h(x) = \frac{e^{-x}}{1+x^2}$, $f(x)=1$ and $p(x) = 1$.
+
+```{r}
+## First we define h(x)
+h_x_function <- function(x)
+{
+  return(exp(-x)/(1+x^2))
+}
+
+f_0_function <- function(x)
+{
+  return(1)
+}
+
+f_1_function <- function(x)
+{
+  return(exp(-x))
+}
+
+f_3_function <- function(x)
+{
+  return(exp(-x)/(1-exp(-1)))
+}
+
+N <- 100000
+uniform_values <- runif(N, 0, 1)
+
+# Getting true values
+int_true   <- integrate(h_x_function, lower = 0, upper = 1)
+true_value <- int_true$value
+true_err   <- int_true$abs.error
+
+# Need to generate the x values from the inverses first
+# Then need to generate the weighted values based of f_i chosen
+# Then need to take the means (don't forget domain!!)
+
+x_0 <- uniform_values
+x_1 <- -log(1 - uniform_values)
+x_3 <- -log(1 - (uniform_values)*(1 - exp(-1)))
+
+ratio_0 <- h_x_function(x_0) / 1
+ratio_1 <- h_x_function(x_1) / f_1_function(x_1)
+ratio_3 <- h_x_function(x_3) / f_3_function(x_3)
+
+mean_0 <- mean(ratio_0)
+mean_1 <- mean(ratio_1)
+mean_3 <- mean(ratio_3)
+
+var_0  <- var(ratio_0)/N
+var_1  <- var(ratio_1)/N
+var_3  <- var(ratio_3)/N
+
+sd_err_0 <- sqrt(var_0)
+sd_err_1 <- sqrt(var_1)
+sd_err_3 <- sqrt(var_3)
+
+estimates <- c(mean_0, mean_1, mean_3, true_value)
+std_err   <- c(sd_err_0, sd_err_1, sd_err_3, true_err)
+functions <- c("Uniform", "f1(x)", "f3(x)", "True Value")
+
+data.frame(functions, estimates, std_err) |>
+  kable(digits = 4, col.names = c("Importance Functions", "Estimates", 
+                                         "Std. Errors"))
+
+```
+
+## Question 4: Random Sums
+
+1.  Use Monte Carlo methods to estimate the mean, variance, and `P(S > c)` for the random sum of exponentials (example in slides). Also find the standard errors (Monte Carlo error) of the mean and the probability. `rnbinom()` generates values from a negative binomial distribution.
+
+```{r}
+p <- 0.5   # use these parameters for the negative binomial NB(p,r)
+r <- 20
+mu <- r*(1-p)/p
+
+x0 <- 5       # use these settings
+M <- 10000    # number of Monte Carlo simulations
+c <- 100
+
+S_gt_c <- 0
+SUMS   <- numeric(M)
+
+for (i in 1:M)
+{
+  nbinom_relisation <- rnbinom(1, size = r, prob = p)
+  exp_mean <- x0
+  S <- 0
+  for (j in 2:nbinom_relisation) 
+  {
+    x_value <- rexp(1, 1/exp_mean)
+    S <- S + x_value
+    exp_mean <- x_value
+  }
+
+  SUMS[i] <- S
+  if (S > c) S_gt_c = S_gt_c + 1
+}
+
+# Estimate for E[S]
+est_S <- mean(SUMS)
+
+# Estimate of SE of S
+se_S  <- sqrt(var(SUMS)/M)
+
+# Pr(S > c) Estimate
+p_est <- S_gt_c / M
+
+# Estimate of SE for above probability estimate
+se_p_est <- sqrt(p_est * (1-p_est) / M)
+
+data.frame(est_S, se_S, p_est, se_p_est) |>
+  kable(digits = 4, col.names = c("E(S)", "SE(S)", "Pr(S > c)"
+                                  , "SE(Pr(S > c))"))
+
+```
+
+## Question 5: The Random Number Generator RANDU
+
+$$
+x_i = 65539x_{i-1} \ \text{mod} \ \ 2^{31}
+$$
+
+1.  Can you find a problem with the following random number generator? What is it
+
+```{r}
+x0 <- sample(1:1000000, size = 1)   # randomly choose a starting value between
+
+x <- c()         # prepare vector x, into which we are going to put values
+x[1] <- 65539 * x0 %% 2^31          # first value
+
+for(i in 2:10000) 
+{
+  x[i] <- 65539 * x[i - 1] %% 2^31     # uniform random number generator called RANDU
+}
+
+set1 <- seq(1, 10000, by = 3)     # create indices of three sets,
+set2 <- seq(2, 10000, by = 3)     # every 3rd, starting from 2
+set3 <- seq(3, 10000, by = 3)     # every 3rd, starting from 3
+x1 <- x[set1]/1e12       # subset 1 (at lag 2)
+x2 <- x[set2]/1e12       # subset 2 (at lag 1)
+x3 <- x[set3]/1e12       # subset 3
+
+setupKnitr(autoprint = TRUE)
+plot3d(x1, x2, x3, col = "red", cex = 0.7, size = 5)
+view3d(theta = 45, phi = 45, fov = 45, zoom = 0.9)  #Initial view settings
+
+```
+
+By turning the plot it can be observed that all points fall into one of 15 planes. This means the random number generator is unable to completely cover a 3-dimensional space and there is correlation between consecutive values. Good random number generators must be able to pass all tests of independence and there should be no pattern or structure. RANDU was the most popular generator until this problem was discovered!!
+
+## Question 6: Monte Carlo Integration
+
+1.  Integrate and report the Monte Carlo Error of your estimate:
+
+$$
+\int^3_{0.8} \frac{1}{1 + sinh(2x) \ . \ log(x)^2}
+$$
+
+```{r}
+given_func <- function(x)
+{
+  return(1/(1 + sinh(2*x) * log(x)^2))
+}
+
+# True Values:
+true_vals <- integrate(given_func, lower = 0.8, upper = 3)
+
+N <- 1000000
+unif_vals <- runif(N, 0.8, 3)
+
+given_of_unif <- given_func(unif_vals)
+int.est  <- mean(given_of_unif) * (3 - 0.8)
+int.var  <- (3 - 0.8)^2 * var(given_of_unif) / N
+int.serr <- sqrt(int.var)
+
+kable(data.frame(c(int.est, true_vals$value), c(int.serr, true_vals$abs.error), 
+                 row.names = c("Estimate", "True Value")),
+      digits = 4, col.names = c("Value", "Std. Error"))
+
+```
+
+## Question 7: Estimate $\pi$
+
+1.  Find a Monte Carlo estimate of $\pi$. What is the error with $N = 1000$ generated points?
+
+```{r}
+
+## Approach 1: Integration Imitation:
+quarter_circle_func <- function(x)
+{
+  return(sqrt(1 - x^2))
+}
+
+N <- 1000
+unif_vals <- runif(N, 0, 1)
+values    <- quarter_circle_func(unif_vals)
+
+# Use the fact that a circle is just 4 quarters
+pi.estimate <- mean(values)*4
+pi.est.serr <- sqrt(var(values)/N)
+
+## Approach 2: Scaled Proportion
+N <- 1000
+x <- runif(N)
+y <- runif(N)
+
+in.circle <- sum(x^2 + y^2 < 1) 
+p.hat     <- in.circle / N
+pi.hat    <- p.hat * 4
+# Note is from a binomial distribution - thus binomial variance
+pi.hat.se <- sqrt((N * p.hat * (1 - p.hat) / N^2) * 16)
+
+kable(data.frame(c(pi.estimate, pi.est.serr), c(pi.hat, pi.hat.se), 
+                 row.names = c("MC Estimate", 
+                               "Scaled Proportion Estimate")),
+      digits = 4, col.names = c("Value", "Std. Error"))
+
+```
+
+## Question 8: Discrete Inverse Transform Sampling
+
+1.  Using only the `runif()` random number generator in `R`, generate random outcomes from the following distribution:
+$$
+p(x) = 
+\begin{cases}
+0.4, \qquad &x = \text{turn left} \\
+0.5, \qquad &x = \text{turn right} \\
+0.1, \qquad &x = \text{stay in place} \\
+0, \qquad &x = \text{otherwise} \\
+\end{cases}
+$$
+
+```{r}
+#| warning: false
+
+N <- 10000
+unif_vals <- runif(N, 0, 1)
+x <- ifelse(unif_vals <= 0.4, "left", ifelse(unif_vals <= 0.9, "right", "stay"))
+
+ggplot() +
+  geom_bar(aes(x=x, y = after_stat(count)/N),  
+           color = "black",
+           alpha = 0.8, 
+           fill = "lightblue") +
+  labs(x = "Movement Decision", y = "Count Proportion") +
+  theme_minimal()
+
+```
+
+## Question 9: Antithetic Sampling
+
+1.  Use Monte Carlo integration to estimate the following integral, find the MC error with `N = 1000`, then use antithetic sampling while comparing estimates and errors:
+
+$$
+\int_0^1f(x) \ dx \ , \qquad \qquad \text{where} \  f(x) = x^2
+$$
+
+```{r}
+true_vals <- integrate(\(x) x^2, 0, 1)
+
+N <- 1000
+unif_vals   <- runif(N, 0, 1)
+estimate_MC <- mean(unif_vals^2)
+MC_sterr    <- sqrt(var(unif_vals^2)/N)
+
+unif_vals_2 <- runif(N/2, 0, 1)
+anti_unifs <- (unif_vals_2^2 + (1 - unif_vals_2)^2)/2
+antithetic_est   <- mean(anti_unifs)
+antithetic_sterr <- sqrt(var(anti_unifs)/(N/2))
+
+
+kable(data.frame(c(true_vals$value, estimate_MC, antithetic_est), 
+                 c(true_vals$abs.error, MC_sterr, antithetic_sterr), 
+                 row.names = c("Intergration", "MC Estimate", 
+                               "Scaled Proportion Estimate")),
+      digits = 4, col.names = c("Value", "Std. Error"))
+
+```
+
+## Question 10: MCMC
+
+1.  Use the Metropolis algorithm to sample from $f(x)$ using $g(x)$ : $X \sim U(−1,1)$ as proposal distribution and `N = 5000`. Illustrate your results.
+
+$$
+f(x) = 10e^{-4(x+4)^2} + 3e^{-0.2(x+1)^2} + e^{-2(x-5)^2}
+$$
+
+```{r}
+given_func <- function(x)
+{
+  return(10*exp(-4*(x+4)^2) + 3*exp(-0.2*(x+1)^2) + exp(-2*(x-5)^2))
+}
+
+metropolis_algorithm <- function(initial, f_func, output_len)
+{
+  x <- numeric(output_len)
+  x[1] <- initial
+  i = 2
+  while (i <= output_len) 
+  {
+    # Generate a proposed point
+    proposal <- x[i-1] + runif(1, -1, 1)
+    
+    # Get the acceptance probability
+    acceptance_pr <- f_func(proposal)/f_func(x[i-1])
+    
+    # Accept or Reject Candidate
+    if (runif(1) <= acceptance_pr) 
+    {
+      x[i] <- proposal
+      i    <- i + 1
+    }
+    else
+    {
+      x[i] <- x[i-1]
+      i    <- i + 1
+    }
+  }
+  return(x)
+}
+
+# Checking distribution
+# x_vals <- seq(-10, 10, length.out = 10000)
+# y_vals <- given_func(x_vals)
+# plot(x_vals, y_vals)
+
+# Area under the curve
+u <- runif(10000, -10, 10)
+fmean <- mean(given_func(u))
+area <- fmean * 20
+nc <- 1/area                  # Provides a normalising constant for the function
+
+sample <- metropolis_algorithm(0, given_func, 500000)
+
+ggplot() +
+  geom_histogram(aes(x = sample, y = after_stat(density)),
+    bins = 100,              # Number of bins
+    fill = "lightblue",      # Fill colour of bars
+    color = "black",         # Border colour of bars
+    alpha = 0.8,             # Transparency
+    boundary = 0,            # Start bins at zero
+    show.legend = FALSE      # Hide the legend
+  ) +
+  stat_function(
+    fun = \(x) given_func(x)*nc,  # Custom function for the distribution
+    color = "red"                 # Line thickness
+  ) +
+  labs(title = "Histogram of Generated Values", x = "Variable", y = "Frequency") +
+  theme_minimal()
+
+```
+
+## Things to ask Birgit:
+
+1.  Why does keeping the previous value if the new one is rejected mean the distribution tends to the shape? (Q1.9) (Q10)
+
+2.  Is this essential to the algorithm? (Not doing so means it often doesn't converge?) (Q1.9) (Q10) 
+3.  Is the proportionality variance alike binomial because of the nature of it? (Q7)
+

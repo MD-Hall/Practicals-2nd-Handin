@@ -1,0 +1,7 @@
+---
+title: "Statistical Computing - HLLMAX005 - Project 2 Hand-in"
+---
+
+## Github Repository
+
+Link to GitHub Repository: [HLLMAX005's GitHub Repository](https://github.com/MD-Hall/Practicals-2nd-Handin)
