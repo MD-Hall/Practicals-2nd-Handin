@@ -1,0 +1,115 @@
+---
+title: "Parallelisation Practical"
+---
+
+```{r}
+#| warning: false
+#| echo: false
+
+library(ggplot2)
+library(foreach)
+library(doParallel)
+library(MASS)
+
+```
+
+## Question 1
+
+Use a foreach loop to repeat 100 times:
+
+-   Generate a random sample from an exponential distribution with mean 1
+
+-   Calculate mean and variance
+
+-   Row-bind your results (rbind) (results = mean and variance).
+
+```{r}
+N <- 10000
+n <- 100
+
+generated_samples <- foreach(1:N, .combine = rbind) %do% 
+  {
+    sample <- rexp(n, rate = 1)
+    c(mean(sample), var(sample))
+  }
+
+colMeans(generated_samples)
+
+```
+
+## Question 2
+Use the `doParallel` package and `foreach` to bootstrap the median for the galaxies data (in library MASS).
+
+If the `foreach` function needs access to data or a function from a certain package, this can be done by adding the `.packages='MASS'` (for example) argument.
+
+How does processing time compare to that of serial processing? If each iteration’s run time is small, relative to the amount of data that needs to be loaded and returned, parallel processing might not actually speed up the total run time. Bootstrapping is relatively small: draw a sample, calculate a statistic. It might only start making a difference if each chunk becomes large relatively to the overheads of data transfer. Experiment with this. Try doing 1000 bootstrap samples at a time instead of managing single bootstrap samples.
+
+```{r}
+total_num_boot <- 10000
+B              <- total_num_boot    # Number of bootstrap Samples
+n              <- length(galaxies)  # Number of samples per
+
+cl <- makeCluster(7)
+registerDoParallel(cl)
+
+# For small task (1 sample) - 1 thread
+system.time(
+{
+  median_boot <- foreach(i = 1:B, .packages = "MASS", .combine = rbind) %do% 
+  {
+    Sys.sleep(0.001)
+    median(sample(galaxies, n, replace = TRUE))
+  }
+})
+
+# For a small task (1 sample per thread)
+system.time(
+{
+  median_boot <- foreach(i = 1:B, .packages = "MASS", .combine = rbind) %dopar% 
+  {
+    Sys.sleep(0.001)
+    median(sample(galaxies, n, replace = TRUE))
+  }
+})
+
+# For a small task (1000 sample per thread)
+num_per_boot   <- 1000
+B_multi <- total_num_boot/num_per_boot
+
+system.time(
+{
+  median_boot <- foreach(i = 1:B_multi, .packages = "MASS", .combine = rbind) %dopar% 
+  {
+    Sys.sleep(0.001)
+    replicate(num_per_boot, median(sample(galaxies, n, replace = TRUE)))
+  }
+})
+
+stopCluster(cl)
+
+```
+
+## Question 3
+
+Estimate coverage of a percentile bootstrap confidence interval for the following scenario: sample of size 50 from an exponential distribution with mean 1.
+
+```{r}
+
+n    <- 50
+rate <- 1
+
+sample_exp <- rexp(n, rate)
+
+cl <- makeCluster(7)
+registerDoParallel(cl)
+
+foreach(1:1000, .combine = rbind) %dopar%
+{
+  cis <- percentile(sample(sample_exp, repace = TRUE), c())
+  
+}
+
+stopCluster(cl)
+
+```
+
