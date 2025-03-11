@@ -160,6 +160,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#question-1" id="toc-question-1" class="nav-link active" data-scroll-target="#question-1">Question 1</a></li>
   <li><a href="#question-2" id="toc-question-2" class="nav-link" data-scroll-target="#question-2">Question 2</a></li>
+  <li><a href="#question-3" id="toc-question-3" class="nav-link" data-scroll-target="#question-3">Question 3</a></li>
   </ul>
 </nav>
 </nav>
@@ -207,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(generated_samples)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.9999613 0.9958675</code></pre>
+<pre><code>[1] 0.9984375 0.9967624</code></pre>
 </div>
 </div>
 </section>
@@ -229,24 +230,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>{</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  median_boot <span class="ot">&lt;-</span> <span class="fu">foreach</span>(<span class="at">i =</span> <span class="dv">1</span><span class="sc">:</span>B, <span class="at">.packages =</span> <span class="st">"MASS"</span>, <span class="at">.combine =</span> rbind) <span class="sc">%do%</span> </span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Sys.sleep</span>(<span class="fl">0.001</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.801   0.007   0.812 </code></pre>
+  3.179   0.107  15.909 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a small task (1 sample per thread)</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>{</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  median_boot <span class="ot">&lt;-</span> <span class="fu">foreach</span>(<span class="at">i =</span> <span class="dv">1</span><span class="sc">:</span>B, <span class="at">.packages =</span> <span class="st">"MASS"</span>, <span class="at">.combine =</span> rbind) <span class="sc">%dopar%</span> </span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Sys.sleep</span>(<span class="fl">0.001</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.919   0.107   1.067 </code></pre>
+  1.096   0.182   2.724 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a small task (1000 sample per thread)</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>num_per_boot   <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
@@ -256,14 +259,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>{</span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  median_boot <span class="ot">&lt;-</span> <span class="fu">foreach</span>(<span class="at">i =</span> <span class="dv">1</span><span class="sc">:</span>B_multi, <span class="at">.packages =</span> <span class="st">"MASS"</span>, <span class="at">.combine =</span> rbind) <span class="sc">%dopar%</span> </span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">replicate</span>(num_per_boot, <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Sys.sleep</span>(<span class="fl">0.001</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">replicate</span>(num_per_boot, <span class="fu">median</span>(<span class="fu">sample</span>(galaxies, n, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.003   0.001   0.057 </code></pre>
+  0.004   0.000   0.057 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="question-3" class="level2">
+<h2 class="anchored" data-anchor-id="question-3">Question 3</h2>
+<p>Estimate coverage of a percentile bootstrap confidence interval for the following scenario: sample of size 50 from an exponential distribution with mean 1.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>boot_exp_ci <span class="ot">&lt;-</span> <span class="cf">function</span>(samples, alpha)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bootstrapping Means and Finding Quantile</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  sample_mean  <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">mean</span>(<span class="fu">sample</span>(samples, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  cis <span class="ot">&lt;-</span> <span class="fu">quantile</span>(sample_mean, <span class="fu">c</span>(alpha, <span class="dv">1</span> <span class="sc">-</span> alpha))</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(cis)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>n    <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>rate <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>B    <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makeCluster</span>(<span class="dv">7</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoParallel</span>(cl)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>generated_cis <span class="ot">&lt;-</span> <span class="fu">foreach</span>(<span class="dv">1</span><span class="sc">:</span>B, <span class="at">.combine =</span> rbind) <span class="sc">%dopar%</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  samples <span class="ot">&lt;-</span> <span class="fu">rexp</span>(n, rate)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boot_exp_ci</span>(samples, <span class="fl">0.025</span>)</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>prop_cov <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="dv">1</span><span class="sc">/</span>rate <span class="sc">&gt;=</span> generated_cis[,<span class="dv">1</span>] <span class="sc">&amp;</span> <span class="dv">1</span><span class="sc">/</span>rate <span class="sc">&lt;=</span> generated_cis[,<span class="dv">2</span>]) <span class="sc">/</span> B</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
