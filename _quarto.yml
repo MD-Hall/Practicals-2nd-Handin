@@ -3,6 +3,9 @@ project:
   type: website
   render:
   - index.qmd
+  - Optimisation_Prac.qmd
+  - Monte_Carlo_Prac.qmd
+  - Bootstrap_Prac.qmd
   - Parallelisation_Prac.qmd
   output-dir: _site
 website:
@@ -17,6 +20,12 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: Optimisation_Prac.qmd
+        text: Optimisation
+      - href: Monte_Carlo_Prac.qmd
+        text: Monte Carlo
+      - href: Bootstrap_Prac.qmd
+        text: Bootstrapping
       - href: Parallelisation_Prac.qmd
         text: Parallelisation
 format:
