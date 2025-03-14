@@ -98,33 +98,36 @@ Estimate coverage of a percentile bootstrap confidence interval for the followin
 
 ```{r}
 
-boot_exp_ci <- function(samples, alpha)
+# Function to get a bootstrap percentile CI
+boot_exp_ci <- function(samples, alpha = 0.025)
 {
   # Bootstrapping Means and Finding Quantile CI
   sample_mean  <- replicate(1000, mean(sample(samples, replace = TRUE)))
   cis <- quantile(sample_mean, c(alpha, 1 - alpha))
-  
+
   return(cis)
 }
 
 # Initialising
 n    <- 50
-rate <- 1
+mean <- 1
 B    <- 1000
+
+# Parallelisation
 cl   <- makeCluster(7)
 registerDoParallel(cl)
 
-# Generating B Bootstrap Percentile CI's
+# Generating a Bootstrap Percentile CI's for B samples
 generated_cis <- foreach(1:B, .combine = rbind) %dopar%
 {
-  samples <- rexp(n, rate)
+  samples <- rexp(n, rate = 1/mean)
   boot_exp_ci(samples, 0.025)
 }
 
 stopCluster(cl)
 
 # Calculating the coverage of the CI
-prop_cov <- sum(1/rate >= generated_cis[,1] & 1/rate <= generated_cis[,2]) / B
+prop_cov <- sum(mean >= generated_cis[,1] & mean <= generated_cis[,2]) / B
 prop_cov
 
 ```
@@ -162,12 +165,20 @@ task_func <- function(iter)
 
 # For parLapply Function
 cl <- makeCluster(getOption("cl.cores", 4))
+
+# parLapply doesn't work with libraries
 set.seed(1234)
 iter <- irnorm(n = 5, mean = 0, sd = 1)
-system.time(
-{
-  parLapply(cl, nextElem(iter), max)
+tryCatch({
+  system.time(
+  {
+    parLapply(cl, iter, task_func)
+  })
+}, error = function(e) {
+  # Code doesn't run as parLapply doesn't allow for external libraries
+  print("Code doesn't run as parLapply doesn't allow for external libraries")
 })
+
 stopCluster(cl)
 
 #  For foreach Function
@@ -183,7 +194,9 @@ system.time(
     task_func(norms)
   }
 })
+
 stopCluster(cl)
+
 
 # For replicate Function: faster as is a simple task (no overheads)
 set.seed(1234)
